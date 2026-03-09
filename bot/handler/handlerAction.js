@@ -10,7 +10,7 @@ module.exports = (api, threadModel, userModel, dashBoardModel, globalModel, user
 
 	return async function (event) {
 
-		// Anti inbox
+		// Anti Inbox System
 		if (
 			global.GoatBot.config.antiInbox == true &&
 			(event.senderID == event.threadID || event.userID == event.senderID || event.isGroup == false) &&
@@ -18,36 +18,44 @@ module.exports = (api, threadModel, userModel, dashBoardModel, globalModel, user
 		)
 			return;
 
-		// ---------- WITHOUT PREFIX SYSTEM ----------
-		const prefix = global.GoatBot.config.prefix || "";
-		let body = event.body || "";
-		let bodyTrim = body.trim();
-
-		if (bodyTrim) {
-			const args = bodyTrim.split(/ +/);
-			const cmdName = args[0].toLowerCase();
-
-			const command = global.GoatBot.commands.get(cmdName);
-
-			if (command && command.config && command.config.noPrefix === true) {
-				event.body = prefix + bodyTrim;
-				event.args = args.slice(1);
-			}
-		}
-		// -------------------------------------------
-
 		const message = createFuncMessage(api, event);
 
 		await handlerCheckDB(usersData, threadsData, event);
+
+		// ===== WITHOUT PREFIX SYSTEM (nixPrefix + noPrefix) =====
+		if (event.body) {
+			const bodyTrim = event.body.trim();
+			const commands = global.GoatBot.commands;
+			const prefix = global.GoatBot.config.prefix;
+
+			const cmdName = bodyTrim.split(/\s+/)[0].toLowerCase();
+			const command = commands.get(cmdName);
+
+			if (command && command.config && (command.config.nixPrefix === true || command.config.noPrefix === true)) {
+				const processedBody = prefix + bodyTrim;
+
+				event.body = processedBody;
+				event.args = bodyTrim.split(/\s+/).slice(1);
+			}
+		}
+		// =======================================
 
 		const handlerChat = await handlerEvents(event, message);
 		if (!handlerChat)
 			return;
 
 		const {
-			onAnyEvent, onFirstChat, onStart, onChat,
-			onReply, onEvent, handlerEvent, onReaction,
-			typ, presence, read_receipt
+			onAnyEvent,
+			onFirstChat,
+			onStart,
+			onChat,
+			onReply,
+			onEvent,
+			handlerEvent,
+			onReaction,
+			typ,
+			presence,
+			read_receipt
 		} = handlerChat;
 
 		onAnyEvent();
