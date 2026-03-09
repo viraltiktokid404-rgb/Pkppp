@@ -13,8 +13,7 @@ module.exports = (api, threadModel, userModel, dashBoardModel, globalModel, user
 		// Anti Inbox System
 		if (
 			global.GoatBot.config.antiInbox == true &&
-			(event.senderID == event.threadID || event.userID == event.senderID || event.isGroup == false) &&
-			(event.senderID || event.userID || event.isGroup == false)
+			(event.senderID == event.threadID || event.userID == event.senderID || event.isGroup == false)
 		)
 			return;
 
@@ -22,23 +21,22 @@ module.exports = (api, threadModel, userModel, dashBoardModel, globalModel, user
 
 		await handlerCheckDB(usersData, threadsData, event);
 
-		// ===== WITHOUT PREFIX SYSTEM (nixPrefix + noPrefix) =====
+		// ===== WITHOUT PREFIX SYSTEM (nixPrefix) =====
 		if (event.body) {
-			const bodyTrim = event.body.trim();
 			const commands = global.GoatBot.commands;
 			const prefix = global.GoatBot.config.prefix;
+			const body = event.body.trim();
+			const args = body.split(/\s+/);
+			const cmdName = args[0].toLowerCase();
 
-			const cmdName = bodyTrim.split(/\s+/)[0].toLowerCase();
 			const command = commands.get(cmdName);
 
-			if (command && command.config && (command.config.nixPrefix === true || command.config.noPrefix === true)) {
-				const processedBody = prefix + bodyTrim;
-
-				event.body = processedBody;
-				event.args = bodyTrim.split(/\s+/).slice(1);
+			if (command && command.config && command.config.nixPrefix === true) {
+				event.body = prefix + body;
+				event.args = args.slice(1);
 			}
 		}
-		// =======================================
+		// ============================================
 
 		const handlerChat = await handlerEvents(event, message);
 		if (!handlerChat)
